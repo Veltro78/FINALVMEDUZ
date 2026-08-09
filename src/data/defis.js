@@ -1,0 +1,37 @@
+// 👉 Défis à points — chaque défi, une fois réclamé par un Shlago, ajoute
+// ses points au score partagé de cette personne (le même score que dans
+// "Classement des Shlagos").
+export const defis = [
+  { id: 'd0', texte: "Voir un(e) Espagnol(e) faire une branlette à un(e) autre Espagnol(e)", points: 15 },
+  { id: 'd1', texte: 'Servir un Grec derrière le bar', points: 7 },
+  { id: 'd2', texte: "Trouver le sosie de quelqu'un (noté /10 par tout le monde, +6 bonus si la moyenne dépasse 3)", points: 6 },
+  { id: 'd3', texte: "Faire un bus à quelqu'un", points: 1 },
+  { id: 'd4', texte: 'Tester une nouvelle drogue', points: 4 },
+  { id: 'd5', texte: "Coucher avec quelqu'un dans sa tente (+10 si c'est la tente de quelqu'un d'autre)", points: 6 },
+  { id: 'd6', texte: 'Prendre une douche tout(e) nu(e)', points: 7 },
+  { id: 'd7', texte: "Pécho quelqu'un sur la mainstage", points: 4 },
+  { id: 'd8', texte: 'Un café-alcool au réveil (par tasse)', points: 2 },
+  { id: 'd9', texte: 'Vomir', points: -3 },
+  { id: 'd10', texte: 'Faire la bise à Sarah Landry', points: 20 },
+  { id: 'd11', texte: "Quelqu'un termine une bouteille entière", points: 2 },
+  { id: 'd12', texte: 'Ramener quelqu\'un au camp (+2 bonus si ça devient sérieux)', points: 2 },
+  { id: 'd13', texte: 'Créer une chenille de 10 personnes minimum', points: 3 },
+  { id: 'd14', texte: "Monter la tente de quelqu'un d'autre", points: 1 },
+  { id: 'd15', texte: 'Passer au stand Réduction des Risques', points: 10 },
+  { id: 'd16', texte: 'Un cul sec (max 5 comptabilisés)', points: 1 },
+  { id: 'd17', texte: "Ramener un banc de la tente blanche jusqu'au camp", points: 7 },
+  { id: 'd18', texte: 'Dormir ailleurs que dans son propre camp', points: 3 },
+  { id: 'd19', texte: "Pécho quelqu'un qui n'est ni français(e) ni espagnol(e)", points: 5 },
+  { id: 'd20', texte: 'Participer à la parade', points: 1 },
+  { id: 'd21', texte: 'Prendre une douche totalement habillé(e)', points: 1 },
+  { id: 'd22', texte: 'Ramener un(e) Français(e) au camp', points: 1 },
+  { id: 'd23', texte: 'Selfie avec un membre du staff', points: 1 },
+  { id: 'd24', texte: 'Selfie avec un artiste présent au festival', points: 8 },
+  { id: 'd25', texte: 'Faire une soirée entière sans aucune drogue dure', points: 10 },
+  { id: 'd26', texte: 'Courir tout(e) nu(e)', points: 1 },
+  { id: 'd27', texte: "Convaincre Gob que ses potes ont pris un truc qu'ils ont pas pris", points: 5 },
+  { id: 'd28', texte: "Tenir une conversation sérieuse avec Mathieu sans qu'il reparte sur un vieux débat", points: 5 },
+  { id: 'd29', texte: "Retrouver Ryfu et l'Espagnole 2h après l'avoir perdu de vue", points: 5 },
+  { id: 'd30', texte: 'Faire dormir Baby Shlagos avant minuit (mission quasi impossible)', points: 5 },
+  { id: 'd31', texte: "Survivre à un kick d'Angerfist sans réveiller Baby Shlagos d'angoisse", points: 5 }
+]

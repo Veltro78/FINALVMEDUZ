@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply font-body text-pool-900 antialiased;
+  margin: 0;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Background artwork now lives in the persistent <AppBackground> component
+   (rendered once at app root) so it crossfades smoothly across navigation
+   instead of hard-cutting per page. */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.35);
+}
+
+.text-outline {
+  text-shadow:
+    0 1px 2px rgba(14, 63, 84, 0.55),
+    0 2px 6px rgba(14, 63, 84, 0.35),
+    0 0 1px rgba(14, 63, 84, 0.5);
+}
+
+::-webkit-scrollbar { width: 0px; height: 0px; }
