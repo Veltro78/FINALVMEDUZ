@@ -8,6 +8,7 @@
 
 html, body, #root {
   height: 100%;
+  height: 100dvh;
 }
 
 body {
@@ -15,6 +16,9 @@ body {
   margin: 0;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
+  /* Fallback derrière l'artwork — jamais blanc, même une fraction de
+     seconde au chargement ou si un écart de hauteur apparaît. */
+  background: #0a5f80;
 }
 
 .app-shell {

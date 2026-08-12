@@ -581,35 +581,49 @@ export default function ShlagoAdventure() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between mt-3">
-        <div className="flex gap-2">
+      <div className="glass-card rounded-3xl px-5 py-4 mt-3 flex items-center justify-between gap-4">
+        <div className="flex gap-3">
           <button
-            onTouchStart={(e) => { e.preventDefault(); setKey('left', true) }}
-            onTouchEnd={(e) => { e.preventDefault(); setKey('left', false) }}
-            onMouseDown={() => setKey('left', true)}
-            onMouseUp={() => setKey('left', false)}
-            onMouseLeave={() => setKey('left', false)}
-            className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center text-2xl text-white active:bg-white/30 select-none"
+            onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setKey('left', true) }}
+            onPointerUp={(e) => { e.preventDefault(); setKey('left', false) }}
+            onPointerCancel={() => setKey('left', false)}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+            className="w-16 h-16 rounded-2xl bg-white/12 flex items-center justify-center active:bg-white/25 active:scale-95 transition-all select-none"
+            aria-label="Gauche"
           >
-            ◀
+            <span
+              className="block w-0 h-0 border-y-[11px] border-y-transparent border-r-[16px] border-r-white"
+              style={{ marginRight: 3 }}
+            />
           </button>
           <button
-            onTouchStart={(e) => { e.preventDefault(); setKey('right', true) }}
-            onTouchEnd={(e) => { e.preventDefault(); setKey('right', false) }}
-            onMouseDown={() => setKey('right', true)}
-            onMouseUp={() => setKey('right', false)}
-            onMouseLeave={() => setKey('right', false)}
-            className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center text-2xl text-white active:bg-white/30 select-none"
+            onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setKey('right', true) }}
+            onPointerUp={(e) => { e.preventDefault(); setKey('right', false) }}
+            onPointerCancel={() => setKey('right', false)}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+            className="w-16 h-16 rounded-2xl bg-white/12 flex items-center justify-center active:bg-white/25 active:scale-95 transition-all select-none"
+            aria-label="Droite"
           >
-            ▶
+            <span
+              className="block w-0 h-0 border-y-[11px] border-y-transparent border-l-[16px] border-l-white"
+              style={{ marginLeft: 3 }}
+            />
           </button>
         </div>
+
         <button
-          onTouchStart={(e) => { e.preventDefault(); jump() }}
-          onClick={jump}
-          className="w-16 h-16 rounded-full bg-gradient-to-br from-turquoise-400 to-turquoise-600 flex items-center justify-center text-2xl text-white active:scale-90 transition-transform select-none"
+          onPointerDown={(e) => { e.preventDefault(); jump() }}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-turquoise-400 to-turquoise-600 flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(13,148,136,0.7)] active:scale-90 transition-transform select-none"
+          aria-label="Sauter"
         >
-          ⬆
+          <span
+            className="block w-0 h-0 border-x-[13px] border-x-transparent border-b-[18px] border-b-white"
+            style={{ marginBottom: 3 }}
+          />
         </button>
       </div>
 
