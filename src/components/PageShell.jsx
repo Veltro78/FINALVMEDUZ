@@ -73,8 +73,18 @@ export default function PageShell({
   title,
   emoji,
   showLogo = false,
-  logoSize = 'sm'
+  logoSize = 'sm',
+  onLogoLongPress
 }) {
+  const longPressTimer = { current: null }
+  function startPress() {
+    if (!onLogoLongPress) return
+    longPressTimer.current = setTimeout(onLogoLongPress, 1500)
+  }
+  function cancelPress() {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+  }
+
   return (
     <div className="app-shell flex flex-col">
       <NavBar />
@@ -87,7 +97,12 @@ export default function PageShell({
         exit="exit"
       >
         {showLogo && (
-          <div className="mb-4 mt-1">
+          <div
+            className="mb-4 mt-1"
+            onPointerDown={startPress}
+            onPointerUp={cancelPress}
+            onPointerLeave={cancelPress}
+          >
             <Logo size={logoSize} />
           </div>
         )}

@@ -11,6 +11,7 @@ import Meteo from './pages/commandement/Meteo.jsx'
 import OuEsTu from './pages/OuEsTu.jsx'
 import Faq from './pages/commandement/Faq.jsx'
 import ReductionRisques from './pages/commandement/ReductionRisques.jsx'
+import TraducteurEspagnol from './pages/commandement/TraducteurEspagnol.jsx'
 
 import LineupIndex from './pages/lineup/LineupIndex.jsx'
 import LineupDay from './pages/lineup/LineupDay.jsx'
@@ -31,6 +32,8 @@ import Polaroid from './pages/souvenirs/Polaroid.jsx'
 import CapsuleTemporelle from './pages/souvenirs/CapsuleTemporelle.jsx'
 import QuiADitCa from './pages/souvenirs/QuiADitCa.jsx'
 import ShlagoAdventure from './pages/souvenirs/ShlagoAdventure.jsx'
+import BoiteAProut from './pages/souvenirs/BoiteAProut.jsx'
+import MurDesTrophees from './pages/souvenirs/MurDesTrophees.jsx'
 
 import NotFound from './pages/NotFound.jsx'
 
@@ -51,6 +54,7 @@ export default function App() {
           <Route path="/ou-es-tu" element={<OuEsTu />} />
           <Route path="/commandement/faq" element={<Faq />} />
           <Route path="/commandement/risques" element={<ReductionRisques />} />
+          <Route path="/commandement/espagnol" element={<TraducteurEspagnol />} />
 
           <Route path="/lineup" element={<LineupIndex />} />
           <Route path="/lineup/favoris" element={<ArtistesFavoris />} />
@@ -65,6 +69,8 @@ export default function App() {
           <Route path="/souvenirs/capsule" element={<CapsuleTemporelle />} />
           <Route path="/souvenirs/qui-a-dit-ca" element={<QuiADitCa />} />
           <Route path="/souvenirs/aventure" element={<ShlagoAdventure />} />
+          <Route path="/souvenirs/prout" element={<BoiteAProut />} />
+          <Route path="/souvenirs/trophees" element={<MurDesTrophees />} />
           <Route path="/souvenirs/photos" element={<Photos />} />
           <Route path="/souvenirs/vlogs" element={<Vlogs />} />
           <Route path="/souvenirs/defis" element={<Defis />} />

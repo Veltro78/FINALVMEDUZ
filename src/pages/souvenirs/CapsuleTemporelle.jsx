@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase.js'
 import PageShell from '../../components/PageShell.jsx'
+import { unlockAchievement } from '../../utils/achievements.js'
 
 const NAME_KEY = 'shlagos-polaroid-name' // même pseudo que le mode Polaroid
 
@@ -39,6 +40,7 @@ export default function CapsuleTemporelle() {
         unlockAt: new Date(unlockDate).getTime(),
         createdAt: serverTimestamp()
       })
+      unlockAchievement('capsule-scellee')
       setMessage('')
       setUnlockDate('')
       setShowForm(false)

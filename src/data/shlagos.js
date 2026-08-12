@@ -12,7 +12,7 @@ export const shlagos = [
     photo: '/photos/leo.jpg',
     couleur: 'turquoise',
     description: "Peut faire la gueule trois jours s'il ne retrouve pas le confort que son papa lui a donné.",
-    anecdotes: []
+    anecdotes: ["Ne se sépare jamais de sa puff, même en pleine crise existentielle."]
   },
   {
     id: 'shlago-2',
@@ -32,7 +32,7 @@ export const shlagos = [
     photo: '/photos/mathieu.jpg',
     couleur: 'coral',
     description: "Peut te prendre la tête pendant des heures pour un truc qui avait déjà été réglé 5 jours avant.",
-    anecdotes: []
+    anecdotes: ["Sniffe absolument tout ce qui lui passe sous le nez, testé et approuvé par lui-même."]
   },
   {
     id: 'shlago-4',
@@ -42,7 +42,7 @@ export const shlagos = [
     photo: '/photos/gob.jpg',
     couleur: 'tropical',
     description: "Peut sortir de ses gonds si se retrouve tout seul. Prendra exactement les mêmes drogues que ses potes pour pas se sentir délaissé.",
-    anecdotes: []
+    anecdotes: ["Suit Mathieu sur absolument tout ce qu'il sniffe, par pur principe de solidarité."]
   },
   {
     id: 'shlago-5',

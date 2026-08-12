@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import PageShell from '../../components/PageShell.jsx'
 import { favoris } from '../../data/favoris.js'
@@ -13,6 +13,8 @@ const ringColor = {
   tropical: 'ring-tropical-400',
   turquoise: 'ring-turquoise-400'
 }
+
+const days = ['Tous', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
 function useNow() {
   const [now, setNow] = useState(Date.now())
@@ -36,13 +38,33 @@ function formatCountdown(diffMs) {
 
 export default function ArtistesFavoris() {
   const now = useNow()
+  const [dayFilter, setDayFilter] = useState('Tous')
+
+  const filtered = useMemo(
+    () => (dayFilter === 'Tous' ? favoris : favoris.filter((a) => a.day === dayFilter)),
+    [dayFilter]
+  )
 
   return (
     <PageShell title="Artistes Favoris" emoji="⭐">
       <p className="text-white/80 text-sm -mt-1">Ta collection — qui, quand, où.</p>
 
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        {days.map((d) => (
+          <button
+            key={d}
+            onClick={() => setDayFilter(d)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-display font-semibold whitespace-nowrap transition-colors ${
+              dayFilter === d ? 'bg-white text-pool-900' : 'glass-card text-white/85'
+            }`}
+          >
+            {d}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
-        {favoris.map((a, i) => {
+        {filtered.map((a, i) => {
           const start = new Date(a.datetime).getTime()
           const diff = start - now
           const isNow = diff <= 0 && diff > -90 * 60000

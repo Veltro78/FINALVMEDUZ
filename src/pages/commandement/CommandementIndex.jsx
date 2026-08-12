@@ -16,6 +16,9 @@ export default function CommandementIndex() {
       <BigButton to="/commandement/risques" icon="firstaid">
         Réduction des risques
       </BigButton>
+      <BigButton to="/commandement/espagnol" icon="🇪🇸" color="orange" subtitle="Le strict nécessaire pour survivre">
+        Traducteur Espagnol
+      </BigButton>
       <BigButton
         icon="💳"
         color="tropical"

@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import SplashFloaters from '../components/SplashFloaters.jsx'
+import { tips } from '../data/tips.js'
 
 export default function Splash() {
   const navigate = useNavigate()
+  const [tip] = useState(() => tips[Math.floor(Math.random() * tips.length)])
 
   useEffect(() => {
     const t = setTimeout(() => navigate('/accueil'), 2200)
@@ -38,6 +40,14 @@ export default function Splash() {
             transition={{ duration: 1.6, ease: 'easeInOut' }}
           />
         </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="text-white/70 text-xs font-body text-center max-w-[240px] px-2"
+        >
+          💡 {tip}
+        </motion.p>
       </motion.div>
       <p className="absolute bottom-8 text-white/60 text-xs font-body">Touche l'écran pour continuer</p>
     </div>

@@ -19,12 +19,18 @@ export default function SouvenirsIndex() {
       <BigButton to="/souvenirs/qui-a-dit-ca" icon="chat" color="sun" subtitle="Devine qui a dit quoi">
         Qui a dit ça ?
       </BigButton>
+      <BigButton to="/souvenirs/prout" icon="💨" color="orange" subtitle="Le strict nécessaire">
+        Boîte à Prout
+      </BigButton>
 
       <p className="text-white/70 text-xs font-display font-semibold uppercase tracking-wide mt-3 mb-1">
         Souvenirs
       </p>
       <BigButton to="/souvenirs/polaroid" icon="camera" subtitle="Le mur photo du groupe, en direct">
         Mode Polaroid
+      </BigButton>
+      <BigButton to="/souvenirs/trophees" icon="🏅" color="sun" subtitle="Se remplit tout seul en jouant">
+        Mur des Trophées
       </BigButton>
       <BigButton to="/souvenirs/capsule" icon="backpack" color="tropical" subtitle="Message scellé, révélé plus tard">
         Capsule Temporelle

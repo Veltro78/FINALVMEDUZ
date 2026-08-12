@@ -4,6 +4,7 @@ import { collection, addDoc, onSnapshot, orderBy, query, limit, serverTimestamp 
 import { db } from '../firebase.js'
 import PageShell from '../components/PageShell.jsx'
 import { shlagos } from '../data/shlagos.js'
+import { unlockAchievement } from '../utils/achievements.js'
 
 const MY_NAME_KEY = 'shlagos-my-name'
 
@@ -53,6 +54,7 @@ export default function OuEsTu() {
         author: myName,
         createdAt: serverTimestamp()
       })
+      unlockAchievement('on-te-retrouve')
       setShowAutre(false)
       setAutreText('')
       setConfirmed(false)

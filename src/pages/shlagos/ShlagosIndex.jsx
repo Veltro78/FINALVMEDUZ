@@ -24,7 +24,10 @@ const kitItems = [
   "Une bonne raison d'avoir perdu Ryfu",
   "Un débat tout prêt pour Mathieu",
   "De quoi occuper Gob s'il se retrouve seul 5 minutes",
-  'Des reins de fer pour les 5 jours'
+  'Des reins de fer pour les 5 jours',
+  'Mouchoirs pour Mathieu (il va tout sniffer, autant que ce soit propre)',
+  'Batterie de rechange pour la puff de Leo',
+  "Un truc à sniffer d'avance pour Gob, pour pas qu'il attende que Mathieu commence"
 ]
 
 const KIT_STORAGE_KEY = 'shlagos-checklist-v1'

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import PageShell from '../../components/PageShell.jsx'
 import { sfx } from '../../utils/sfx.js'
+import { levels } from '../../data/levels.js'
+import { unlockAchievement, isUnlocked } from '../../utils/achievements.js'
 
 const GRAVITY = 0.6
 const JUMP_FORCE = -12
@@ -9,60 +12,167 @@ const CANVAS_W = 800
 const CANVAS_H = 400
 const GROUND_Y = 340
 
-// Niveau : plateformes, jetons (triangles bleus), bonus bières, ennemis
-// (private jokes des Shlagos), drapeau d'arrivée.
-const LEVEL_WIDTH = 3200
-const platforms = [
-  { x: 0, y: GROUND_Y, w: LEVEL_WIDTH, h: 60 }, // sol
-  { x: 300, y: 260, w: 140, h: 20 },
-  { x: 520, y: 200, w: 120, h: 20 },
-  { x: 720, y: 280, w: 100, h: 20 },
-  { x: 950, y: 220, w: 140, h: 20 },
-  { x: 1200, y: 300, w: 100, h: 20 },
-  { x: 1400, y: 240, w: 120, h: 20 },
-  { x: 1650, y: 180, w: 100, h: 20 },
-  { x: 1900, y: 260, w: 160, h: 20 },
-  { x: 2150, y: 200, w: 100, h: 20 },
-  { x: 2400, y: 280, w: 140, h: 20 },
-  { x: 2650, y: 220, w: 120, h: 20 },
-  { x: 2900, y: 300, w: 200, h: 20 }
-]
-const tokensInit = [
-  { x: 350, y: 220 }, { x: 560, y: 160 }, { x: 760, y: 240 },
-  { x: 1000, y: 180 }, { x: 1240, y: 260 }, { x: 1440, y: 200 },
-  { x: 1690, y: 140 }, { x: 1960, y: 220 }, { x: 2190, y: 160 },
-  { x: 2450, y: 240 }, { x: 2690, y: 180 }, { x: 2950, y: 260 },
-  { x: 3050, y: 260 }
-]
-// Bonus bières (3 points au lieu d'1), placées un peu proches des ennemis
-// pour un vrai risque/récompense.
-const beersInit = [
-  { x: 640, y: 290 }, { x: 2050, y: 290 }, { x: 2760, y: 190 }
-]
-// Ennemis = private jokes du groupe. Simple patrouille gauche-droite,
-// contact = respawn (façon "il te prend la tête / il te suit partout").
-const enemiesInit = [
-  { id: 'bengal', label: 'Bengal', x: 610, y: GROUND_Y - 34, w: 26, h: 34, minX: 560, maxX: 780, speed: 2.6, dir: 1, color: '#f5a000' },
-  { id: 'mathieu', label: 'Mathieu', x: 1320, y: GROUND_Y - 34, w: 28, h: 34, minX: 1320, maxX: 1320, speed: 0, dir: 1, color: '#e83a52' },
-  { id: 'gob', label: 'Gob', x: 2000, y: GROUND_Y - 34, w: 26, h: 34, minX: 1900, maxX: 2220, speed: 3.4, dir: 1, color: '#1f9e57' }
-]
-const FLAG_X = 3120
-const START_X = 40
-const START_Y = 250
-
-// Décors de fond en parallax (dessinés avant la translation caméra pour
-// donner une impression de profondeur — festival oblige : palmiers,
-// grande roue, guirlandes, tentes).
 const palmXs = [120, 480, 900, 1350, 1750, 2150, 2550, 2900]
 const tikiXs = [700, 1600, 2450]
+const tentXs = [400, 1300, 2200, 3000]
+const cloudXs = [200, 650, 1150, 1650, 2150, 2650, 3100]
+
+function drawClouds(ctx, camX, opacity = 0.5) {
+  ctx.fillStyle = `rgba(255,255,255,${opacity})`
+  for (const cx of cloudXs) {
+    const sx = cx - camX * 0.35
+    if (sx < -80 || sx > CANVAS_W + 80) continue
+    const sy = 70 + (cx % 3) * 18
+    ctx.beginPath()
+    ctx.ellipse(sx, sy, 26, 14, 0, 0, Math.PI * 2)
+    ctx.ellipse(sx + 22, sy + 4, 20, 11, 0, 0, Math.PI * 2)
+    ctx.ellipse(sx - 20, sy + 5, 18, 10, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+function drawGroundTexture(ctx, groundColor, level) {
+  // brins d'herbe / motif décoratif le long du sol pour casser le plat
+  ctx.fillStyle = 'rgba(255,255,255,0.18)'
+  for (let x = 20; x < level.width; x += 34) {
+    ctx.beginPath()
+    ctx.moveTo(x, GROUND_Y)
+    ctx.lineTo(x + 5, GROUND_Y - 9)
+    ctx.lineTo(x + 10, GROUND_Y)
+    ctx.closePath()
+    ctx.fill()
+  }
+}
+
+function drawDayDecor(ctx, camX) {
+  const wheelX = 1500 - camX * 0.25
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)'
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.arc(wheelX, 140, 70, 0, Math.PI * 2)
+  ctx.stroke()
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2
+    ctx.beginPath()
+    ctx.moveTo(wheelX, 140)
+    ctx.lineTo(wheelX + Math.cos(a) * 70, 140 + Math.sin(a) * 70)
+    ctx.stroke()
+  }
+  for (const px of palmXs) {
+    const sx = px - camX * 0.55
+    if (sx < -60 || sx > CANVAS_W + 60) continue
+    ctx.fillStyle = '#5c3419'
+    ctx.fillRect(sx - 4, GROUND_Y - 70, 8, 70)
+    ctx.fillStyle = '#1f9e57'
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 4) * Math.PI * 0.9 - Math.PI * 0.45
+      ctx.beginPath()
+      ctx.ellipse(sx + Math.cos(a) * 22, GROUND_Y - 70 + Math.sin(a) * 14 - 10, 22, 9, a, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  for (const tx of tikiXs) {
+    const sx = tx - camX * 0.85
+    if (sx < -60 || sx > CANVAS_W + 60) continue
+    ctx.fillStyle = '#7a4a26'
+    ctx.beginPath()
+    ctx.moveTo(sx - 34, GROUND_Y - 40)
+    ctx.lineTo(sx, GROUND_Y - 85)
+    ctx.lineTo(sx + 34, GROUND_Y - 40)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'
+    ctx.fillRect(sx - 26, GROUND_Y - 40, 52, 40)
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  for (let x = 0 - camX * 0.85; x < CANVAS_W; x += 90) {
+    ctx.moveTo(x, 20)
+    ctx.quadraticCurveTo(x + 45, 45, x + 90, 20)
+  }
+  ctx.stroke()
+}
+
+function drawNightDecor(ctx, camX, t) {
+  // cabine DJ silhouette lointaine
+  const boothX = 1100 - camX * 0.3
+  ctx.fillStyle = 'rgba(0,0,0,0.4)'
+  ctx.fillRect(boothX - 40, GROUND_Y - 90, 80, 90)
+  // lasers qui balaient
+  const sweep = Math.sin(t / 500) * 200
+  ctx.strokeStyle = 'rgba(184, 138, 240, 0.35)'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(boothX, GROUND_Y - 90)
+  ctx.lineTo(boothX + sweep, 0)
+  ctx.stroke()
+  ctx.strokeStyle = 'rgba(255, 111, 125, 0.3)'
+  ctx.beginPath()
+  ctx.moveTo(boothX, GROUND_Y - 90)
+  ctx.lineTo(boothX - sweep, 0)
+  ctx.stroke()
+  // strobes en haut d'écran
+  const strobeOn = Math.floor(t / 150) % 4 === 0
+  if (strobeOn) {
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+  }
+  // silhouettes de foule
+  for (const px of palmXs) {
+    const sx = px - camX * 0.7
+    if (sx < -40 || sx > CANVAS_W + 40) continue
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+    ctx.beginPath()
+    ctx.arc(sx, GROUND_Y - 20, 12, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillRect(sx - 8, GROUND_Y - 20, 16, 20)
+  }
+}
+
+function drawMorningDecor(ctx, camX) {
+  for (const tx of tentXs) {
+    const sx = tx - camX * 0.7
+    if (sx < -60 || sx > CANVAS_W + 60) continue
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'
+    ctx.beginPath()
+    ctx.moveTo(sx - 28, GROUND_Y - 5)
+    ctx.lineTo(sx, GROUND_Y - 45)
+    ctx.lineTo(sx + 28, GROUND_Y - 5)
+    ctx.closePath()
+    ctx.fill()
+  }
+  // mouettes
+  for (const gx of [300, 900, 1600, 2300]) {
+    const sx = gx - camX * 0.4
+    if (sx < -40 || sx > CANVAS_W + 40) continue
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(sx - 8, 60)
+    ctx.quadraticCurveTo(sx, 50, sx + 8, 60)
+    ctx.stroke()
+  }
+  // gobelets qui traînent
+  for (const cx of [500, 1400, 2600]) {
+    const sx = cx - camX
+    if (sx < -20 || sx > CANVAS_W + 20) continue
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'
+    ctx.fillRect(sx - 5, GROUND_Y - 12, 10, 12)
+  }
+}
 
 export default function ShlagoAdventure() {
   const canvasRef = useRef(null)
   const stateRef = useRef(null)
-  const [ui, setUi] = useState({ tokens: 0, status: 'playing' }) // playing | won
+  const [levelIndex, setLevelIndex] = useState(null) // null = écran de sélection
+  const [ui, setUi] = useState({ tokens: 0, status: 'playing' })
   const [resetKey, setResetKey] = useState(0)
 
+  const level = levelIndex !== null ? levels[levelIndex] : null
+
   useEffect(() => {
+    if (!level) return
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     const dpr = window.devicePixelRatio || 1
@@ -71,10 +181,10 @@ export default function ShlagoAdventure() {
     ctx.scale(dpr, dpr)
 
     const state = {
-      player: { x: START_X, y: START_Y, w: 28, h: 34, vx: 0, vy: 0, onGround: false, facing: 1 },
-      tokens: tokensInit.map((c) => ({ ...c, taken: false })),
-      beers: beersInit.map((b) => ({ ...b, taken: false })),
-      enemies: enemiesInit.map((e) => ({ ...e })),
+      player: { x: level.startX, y: level.startY, w: 28, h: 34, vx: 0, vy: 0, onGround: false, facing: 1 },
+      tokens: level.tokens.map((c) => ({ ...c, taken: false })),
+      beers: level.beers.map((b) => ({ ...b, taken: false })),
+      enemies: level.enemies.map((e) => ({ ...e, dir: 1 })),
       keys: { left: false, right: false },
       won: false,
       raf: null
@@ -84,17 +194,16 @@ export default function ShlagoAdventure() {
     function rectsOverlap(a, b) {
       return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
     }
-
     function respawn() {
       const p = state.player
-      p.x = START_X
-      p.y = START_Y
+      p.x = level.startX
+      p.y = level.startY
       p.vx = 0
       p.vy = 0
       sfx.fail()
     }
 
-    function update() {
+    function update(t) {
       const p = state.player
       if (!state.won) {
         p.vx = state.keys.left ? -MOVE_SPEED : state.keys.right ? MOVE_SPEED : 0
@@ -104,9 +213,8 @@ export default function ShlagoAdventure() {
         p.vy += GRAVITY
         if (p.vy > 15) p.vy = 15
 
-        // mouvement X + collisions plateformes
         p.x += p.vx
-        for (const pl of platforms) {
+        for (const pl of level.platforms) {
           if (rectsOverlap(p, pl)) {
             if (p.vx > 0) p.x = pl.x - p.w
             else if (p.vx < 0) p.x = pl.x + pl.w
@@ -114,10 +222,9 @@ export default function ShlagoAdventure() {
         }
         if (p.x < 0) p.x = 0
 
-        // mouvement Y + collisions plateformes
         p.y += p.vy
         p.onGround = false
-        for (const pl of platforms) {
+        for (const pl of level.platforms) {
           if (rectsOverlap(p, pl)) {
             if (p.vy > 0) {
               p.y = pl.y - p.h
@@ -130,10 +237,8 @@ export default function ShlagoAdventure() {
           }
         }
 
-        // chute dans le vide -> respawn
         if (p.y > CANVAS_H + 100) respawn()
 
-        // ennemis : patrouille + collision
         for (const en of state.enemies) {
           if (en.speed > 0) {
             en.x += en.speed * en.dir
@@ -142,15 +247,14 @@ export default function ShlagoAdventure() {
           if (rectsOverlap(p, en)) respawn()
         }
 
-        // jetons
         for (const c of state.tokens) {
           if (!c.taken && Math.abs(p.x + p.w / 2 - c.x) < 22 && Math.abs(p.y + p.h / 2 - c.y) < 22) {
             c.taken = true
             sfx.coin()
             setUi((u) => ({ ...u, tokens: u.tokens + 1 }))
+            unlockAchievement('premier-jeton')
           }
         }
-        // bières bonus
         for (const b of state.beers) {
           if (!b.taken && Math.abs(p.x + p.w / 2 - b.x) < 22 && Math.abs(p.y + p.h / 2 - b.y) < 22) {
             b.taken = true
@@ -159,174 +263,205 @@ export default function ShlagoAdventure() {
           }
         }
 
-        // drapeau
-        if (p.x + p.w >= FLAG_X && !state.won) {
+        if (p.x + p.w >= level.flagX && !state.won) {
           state.won = true
           sfx.fanfare()
           setUi((u) => ({ ...u, status: 'won' }))
+          if (level.id === 'camp') unlockAchievement('niveau-camp')
+          if (level.id === 'rave') unlockAchievement('niveau-rave')
+          if (level.id === 'comeback') unlockAchievement('niveau-comeback')
+          if (['niveau-camp', 'niveau-rave', 'niveau-comeback'].every((id) => isUnlocked(id))) {
+            unlockAchievement('legende-adventure')
+          }
         }
       }
 
-      // caméra
-      const camX = Math.max(0, Math.min(p.x - CANVAS_W / 2, LEVEL_WIDTH - CANVAS_W))
+      const camX = Math.max(0, Math.min(p.x - CANVAS_W / 2, level.width - CANVAS_W))
 
-      // ---------- rendu ----------
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
       const skyGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H)
-      skyGrad.addColorStop(0, '#38c6e6')
-      skyGrad.addColorStop(1, '#0c6584')
+      skyGrad.addColorStop(0, level.sky[0])
+      skyGrad.addColorStop(1, level.sky[1])
       ctx.fillStyle = skyGrad
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
 
-      // soleil
-      ctx.fillStyle = '#ffcf3f'
+      ctx.fillStyle = level.sunColor
       ctx.beginPath()
       ctx.arc(680 - camX * 0.15, 55, 34, 0, Math.PI * 2)
       ctx.fill()
 
-      // grande roue en arrière-plan lointain (parallax léger)
-      const wheelX = 1500 - camX * 0.25
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)'
-      ctx.lineWidth = 4
-      ctx.beginPath()
-      ctx.arc(wheelX, 140, 70, 0, Math.PI * 2)
-      ctx.stroke()
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2
-        ctx.beginPath()
-        ctx.moveTo(wheelX, 140)
-        ctx.lineTo(wheelX + Math.cos(a) * 70, 140 + Math.sin(a) * 70)
-        ctx.stroke()
-      }
-
-      // palmiers en parallax moyen
-      const palmParallax = 0.55
-      for (const px of palmXs) {
-        const sx = px - camX * palmParallax
-        if (sx < -60 || sx > CANVAS_W + 60) continue
-        ctx.fillStyle = '#5c3419'
-        ctx.fillRect(sx - 4, GROUND_Y - 70, 8, 70)
-        ctx.fillStyle = '#1f9e57'
-        for (let i = 0; i < 5; i++) {
-          const a = (i / 4) * Math.PI * 0.9 - Math.PI * 0.45
-          ctx.beginPath()
-          ctx.ellipse(sx + Math.cos(a) * 22, GROUND_Y - 70 + Math.sin(a) * 14 - 10, 22, 9, a, 0, Math.PI * 2)
-          ctx.fill()
-        }
-      }
-
-      // tiki huts en parallax proche
-      for (const tx of tikiXs) {
-        const sx = tx - camX * 0.85
-        if (sx < -60 || sx > CANVAS_W + 60) continue
-        ctx.fillStyle = '#7a4a26'
-        ctx.beginPath()
-        ctx.moveTo(sx - 34, GROUND_Y - 40)
-        ctx.lineTo(sx, GROUND_Y - 85)
-        ctx.lineTo(sx + 34, GROUND_Y - 40)
-        ctx.closePath()
-        ctx.fill()
-        ctx.fillStyle = 'rgba(0,0,0,0.15)'
-        ctx.fillRect(sx - 26, GROUND_Y - 40, 52, 40)
-      }
-
-      // guirlandes lumineuses
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      for (let x = 0 - camX * 0.85; x < CANVAS_W; x += 90) {
-        ctx.moveTo(x, 20)
-        ctx.quadraticCurveTo(x + 45, 45, x + 90, 20)
-      }
-      ctx.stroke()
+      if (level.decor === 'day') drawDayDecor(ctx, camX)
+      else if (level.decor === 'night') drawNightDecor(ctx, camX, t || 0)
+      else if (level.decor === 'morning') drawMorningDecor(ctx, camX)
+      drawClouds(ctx, camX, level.decor === 'night' ? 0.15 : 0.5)
 
       ctx.save()
       ctx.translate(-camX, 0)
 
-      // plateformes
-      for (const pl of platforms) {
-        ctx.fillStyle = pl.y === GROUND_Y ? '#149457' : '#7c3fd4'
+      for (const pl of level.platforms) {
+        const isGround = pl.y === GROUND_Y
+        ctx.fillStyle = isGround ? level.groundColor : level.platformColor
         ctx.beginPath()
-        ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 8)
+        ctx.roundRect(pl.x, pl.y, pl.w, pl.h, isGround ? 0 : 10)
         ctx.fill()
-        ctx.fillStyle = 'rgba(255,255,255,0.25)'
+        // ombre douce sous la plateforme
+        ctx.fillStyle = 'rgba(0,0,0,0.15)'
+        ctx.fillRect(pl.x, pl.y + pl.h - 4, pl.w, 4)
+        // liseré brillant sur le dessus
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'
         ctx.fillRect(pl.x, pl.y, pl.w, 4)
       }
+      drawGroundTexture(ctx, level.groundColor, level)
 
-      // jetons — triangles bleus (jetons cashless du festival)
+      const bob = Math.sin((t || 0) / 300) * 3 // léger flottement pour jetons/bières
+
       for (const c of state.tokens) {
         if (c.taken) continue
-        ctx.fillStyle = '#38c6e6'
+        const y = c.y + bob
+        ctx.save()
+        ctx.shadowColor = '#38c6e6'
+        ctx.shadowBlur = 10
+        ctx.fillStyle = '#5fd6f0'
         ctx.beginPath()
-        ctx.moveTo(c.x, c.y - 11)
-        ctx.lineTo(c.x + 10, c.y + 8)
-        ctx.lineTo(c.x - 10, c.y + 8)
+        ctx.moveTo(c.x, y - 11)
+        ctx.lineTo(c.x + 10, y + 8)
+        ctx.lineTo(c.x - 10, y + 8)
         ctx.closePath()
         ctx.fill()
         ctx.strokeStyle = '#0d6d63'
         ctx.lineWidth = 2
         ctx.stroke()
+        ctx.fillStyle = 'rgba(255,255,255,0.5)'
+        ctx.beginPath()
+        ctx.moveTo(c.x, y - 7)
+        ctx.lineTo(c.x + 4, y + 2)
+        ctx.lineTo(c.x - 4, y + 2)
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
       }
 
-      // bières bonus
       for (const b of state.beers) {
         if (b.taken) continue
+        const y = b.y + bob * 0.6
+        ctx.save()
+        ctx.translate(b.x, y)
+        ctx.rotate(Math.sin((t || 0) / 400) * 0.08)
         ctx.fillStyle = '#ffcf3f'
-        ctx.fillRect(b.x - 9, b.y - 12, 16, 22)
+        ctx.fillRect(-9, -12, 16, 22)
         ctx.strokeStyle = '#f5a000'
         ctx.lineWidth = 2
-        ctx.strokeRect(b.x - 9, b.y - 12, 16, 22)
-        ctx.strokeStyle = '#f5a000'
+        ctx.strokeRect(-9, -12, 16, 22)
         ctx.beginPath()
-        ctx.arc(b.x + 10, b.y - 1, 7, -Math.PI * 0.5, Math.PI * 0.5)
+        ctx.arc(10, -1, 7, -Math.PI * 0.5, Math.PI * 0.5)
         ctx.stroke()
         ctx.fillStyle = '#fff'
-        ctx.fillRect(b.x - 9, b.y - 12, 16, 5)
+        ctx.fillRect(-9, -12, 16, 5)
+        // petites bulles de mousse
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'
+        ctx.beginPath()
+        ctx.arc(-3, -14, 2, 0, Math.PI * 2)
+        ctx.arc(2, -15, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
       }
 
-      // ennemis (private jokes)
       for (const en of state.enemies) {
+        const bounceY = en.y + Math.abs(Math.sin((t || 0) / 200 + en.x)) * -3
+        ctx.save()
+        ctx.shadowColor = 'rgba(0,0,0,0.4)'
+        ctx.shadowBlur = 6
         ctx.fillStyle = en.color
         ctx.beginPath()
-        ctx.roundRect(en.x, en.y, en.w, en.h, 8)
+        ctx.roundRect(en.x, bounceY, en.w, en.h, 9)
         ctx.fill()
+        ctx.restore()
+        // sourcils fâchés
+        ctx.strokeStyle = '#08303f'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(en.x + 4, bounceY + 8)
+        ctx.lineTo(en.x + 10, bounceY + 10)
+        ctx.moveTo(en.x + en.w - 4, bounceY + 8)
+        ctx.lineTo(en.x + en.w - 10, bounceY + 10)
+        ctx.stroke()
+        // yeux
         ctx.fillStyle = '#08303f'
         ctx.beginPath()
-        ctx.arc(en.x + en.w / 2 - 4, en.y + 10, 2.2, 0, Math.PI * 2)
-        ctx.arc(en.x + en.w / 2 + 4, en.y + 10, 2.2, 0, Math.PI * 2)
+        ctx.arc(en.x + en.w / 2 - 4, bounceY + 13, 2.2, 0, Math.PI * 2)
+        ctx.arc(en.x + en.w / 2 + 4, bounceY + 13, 2.2, 0, Math.PI * 2)
         ctx.fill()
+        // bouche mécontente
+        ctx.beginPath()
+        ctx.arc(en.x + en.w / 2, bounceY + 24, 4, Math.PI, Math.PI * 2)
+        ctx.stroke()
         ctx.fillStyle = '#fff'
         ctx.font = 'bold 10px sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(en.label, en.x + en.w / 2, en.y - 6)
+        ctx.fillText(en.label, en.x + en.w / 2, bounceY - 6)
       }
 
-      // drapeau
       ctx.fillStyle = '#e83a52'
-      ctx.fillRect(FLAG_X, GROUND_Y - 120, 6, 120)
+      ctx.fillRect(level.flagX, GROUND_Y - 120, 6, 120)
       ctx.beginPath()
-      ctx.moveTo(FLAG_X + 6, GROUND_Y - 120)
-      ctx.lineTo(FLAG_X + 46, GROUND_Y - 105)
-      ctx.lineTo(FLAG_X + 6, GROUND_Y - 90)
+      ctx.moveTo(level.flagX + 6, GROUND_Y - 120)
+      ctx.lineTo(level.flagX + 46, GROUND_Y - 105)
+      ctx.lineTo(level.flagX + 6, GROUND_Y - 90)
       ctx.closePath()
       ctx.fill()
 
-      // joueur (petit Shlago rond)
+      // ombre au sol sous le joueur
+      ctx.fillStyle = 'rgba(0,0,0,0.2)'
+      ctx.beginPath()
+      ctx.ellipse(p.x + p.w / 2, Math.min(p.y + p.h + 4, GROUND_Y + 2), 14, 4, 0, 0, Math.PI * 2)
+      ctx.fill()
+
       ctx.save()
       ctx.translate(p.x + p.w / 2, p.y + p.h / 2)
       ctx.scale(p.facing, 1)
-      ctx.fillStyle = '#ff6f7d'
+
+      // petites jambes qui pédalent quand ça marche
+      const legSwing = p.onGround && p.vx !== 0 ? Math.sin((t || 0) / 60) * 6 : 0
+      ctx.strokeStyle = '#0b4a5e'
+      ctx.lineWidth = 4
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.moveTo(-6, p.h / 2 - 2)
+      ctx.lineTo(-6 + legSwing, p.h / 2 + 8)
+      ctx.moveTo(6, p.h / 2 - 2)
+      ctx.lineTo(6 - legSwing, p.h / 2 + 8)
+      ctx.stroke()
+
+      // corps
+      const bodyGrad = ctx.createLinearGradient(0, -p.h / 2, 0, p.h / 2)
+      bodyGrad.addColorStop(0, '#ff8a94')
+      bodyGrad.addColorStop(1, '#e8485a')
+      ctx.fillStyle = bodyGrad
       ctx.beginPath()
       ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 10)
       ctx.fill()
-      ctx.fillStyle = '#fff'
+      ctx.fillStyle = 'rgba(255,255,255,0.25)'
       ctx.beginPath()
-      ctx.arc(4, -6, 5, 0, Math.PI * 2)
+      ctx.roundRect(-p.w / 2 + 3, -p.h / 2 + 3, p.w - 6, 6, 4)
       ctx.fill()
+
+      // lunettes de soleil façon festival
       ctx.fillStyle = '#08303f'
       ctx.beginPath()
-      ctx.arc(6, -6, 2.5, 0, Math.PI * 2)
+      ctx.roundRect(-2, -9, 11, 7, 3)
       ctx.fill()
+      ctx.fillStyle = 'rgba(56,198,230,0.7)'
+      ctx.beginPath()
+      ctx.roundRect(0, -7.5, 7, 4, 2)
+      ctx.fill()
+
+      // sourire
+      ctx.strokeStyle = '#08303f'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(2, 2, 4, 0.15 * Math.PI, 0.85 * Math.PI)
+      ctx.stroke()
+
       ctx.restore()
 
       ctx.restore()
@@ -336,7 +471,7 @@ export default function ShlagoAdventure() {
 
     state.raf = requestAnimationFrame(update)
     return () => cancelAnimationFrame(state.raf)
-  }, [resetKey])
+  }, [resetKey, level])
 
   function setKey(key, val) {
     if (stateRef.current) stateRef.current.keys[key] = val
@@ -352,6 +487,10 @@ export default function ShlagoAdventure() {
   function restart() {
     setUi({ tokens: 0, status: 'playing' })
     setResetKey((k) => k + 1)
+  }
+  function backToLevels() {
+    setLevelIndex(null)
+    setUi({ tokens: 0, status: 'playing' })
   }
 
   useEffect(() => {
@@ -372,10 +511,38 @@ export default function ShlagoAdventure() {
     }
   }, [])
 
+  if (levelIndex === null) {
+    return (
+      <PageShell title="Shlago Adventure" emoji="🎮">
+        <p className="text-white/80 text-sm -mt-1 text-center">Choisis ton niveau.</p>
+        <p className="text-sun-300 text-xs font-display font-bold text-center -mt-2 mb-1">
+          🎯 Objectif : chope un max de jetons 🔷 avant le drapeau !
+        </p>
+        <div className="flex flex-col gap-3">
+          {levels.map((lvl, i) => (
+            <motion.button
+              key={lvl.id}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { setUi({ tokens: 0, status: 'playing' }); setLevelIndex(i) }}
+              className="glass-card rounded-3xl p-4 flex items-center gap-3 text-left"
+            >
+              <span className="text-3xl">{lvl.emoji}</span>
+              <span className="flex-1">
+                <span className="block font-display font-bold text-white">{lvl.name}</span>
+                <span className="block text-white/60 text-xs mt-0.5">{lvl.subtitle}</span>
+              </span>
+              <span className="text-2xl text-white/60">›</span>
+            </motion.button>
+          ))}
+        </div>
+      </PageShell>
+    )
+  }
+
   return (
-    <PageShell title="Shlago Adventure" emoji="🎮">
+    <PageShell title={level.name} emoji={level.emoji}>
       <p className="text-white/80 text-sm -mt-1 text-center">
-        Ramasse les jetons, évite Bengal/Mathieu/Gob, rejoins le drapeau.
+        Ramasse les jetons, évite les ennemis, rejoins le drapeau.
       </p>
 
       <div className="relative rounded-3xl overflow-hidden glass-card">
@@ -386,18 +553,32 @@ export default function ShlagoAdventure() {
             <p className="text-3xl">🏆</p>
             <p className="font-display font-extrabold text-white text-xl">Gagné !</p>
             <p className="text-white/80 text-sm">🔷 {ui.tokens} jetons récoltés</p>
-            <button
-              onClick={restart}
-              className="rounded-full bg-gradient-to-br from-coral-400 to-purple-600 px-6 py-2.5 font-display font-bold text-white"
-            >
-              Rejouer
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={restart}
+                className="rounded-full bg-gradient-to-br from-coral-400 to-purple-600 px-5 py-2.5 font-display font-bold text-white text-sm"
+              >
+                Rejouer
+              </button>
+              <button
+                onClick={backToLevels}
+                className="rounded-full bg-white/15 px-5 py-2.5 font-display font-bold text-white text-sm"
+              >
+                Niveaux
+              </button>
+            </div>
           </div>
         )}
 
         <div className="absolute top-2 left-2 bg-black/50 backdrop-blur rounded-full px-3 py-1 text-white text-xs font-display font-bold">
           🔷 {ui.tokens}
         </div>
+        <button
+          onClick={backToLevels}
+          className="absolute top-2 right-2 bg-black/50 backdrop-blur rounded-full w-7 h-7 flex items-center justify-center text-white text-xs"
+        >
+          ✕
+        </button>
       </div>
 
       <div className="flex items-center justify-between mt-3">

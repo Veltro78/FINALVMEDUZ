@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { doc, onSnapshot, setDoc, increment, collection } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc, increment, collection, addDoc, query, orderBy, limit, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase.js'
 import PageShell from '../../components/PageShell.jsx'
 import Card from '../../components/Card.jsx'
 import { shlagos } from '../../data/shlagos.js'
 import { sfx } from '../../utils/sfx.js'
+import { unlockAchievement } from '../../utils/achievements.js'
+import Portal from '../../components/Portal.jsx'
 
 // 👉 Défis à points — en tapant sur un défi, tu choisis qui l'a fait, et
 // ses points s'ajoutent au même classement partagé que "Classement des
@@ -51,6 +53,8 @@ export default function Defis() {
   const [scores, setScores] = useState(() => Object.fromEntries(shlagos.map((s) => [s.id, 0])))
   const [doneBy, setDoneBy] = useState({}) // { index: shlagoId } — juste pour l'affichage de cette session
   const [pickerIndex, setPickerIndex] = useState(null)
+  const [historique, setHistorique] = useState([])
+  const [showHisto, setShowHisto] = useState(false)
 
   useEffect(() => {
     const unsubs = shlagos.map((s) =>
@@ -61,13 +65,30 @@ export default function Defis() {
     return () => unsubs.forEach((u) => u())
   }, [])
 
+  useEffect(() => {
+    const q = query(collection(db, 'historique'), orderBy('createdAt', 'desc'), limit(15))
+    const unsub = onSnapshot(q, (snap) => {
+      setHistorique(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    })
+    return () => unsub()
+  }, [])
+
   function assign(shlagoId) {
     const defi = defis[pickerIndex]
+    const shlago = shlagos.find((s) => s.id === shlagoId)
     setDoneBy((d) => ({ ...d, [pickerIndex]: shlagoId }))
     setScores((s) => ({ ...s, [shlagoId]: (s[shlagoId] || 0) + defi.points }))
     setDoc(doc(collection(db, 'classement'), shlagoId), { score: increment(defi.points) }, { merge: true })
+    addDoc(collection(db, 'historique'), {
+      shlagoId,
+      shlagoName: shlago.prenom,
+      points: defi.points,
+      defiText: defi.texte,
+      createdAt: serverTimestamp()
+    })
     setPickerIndex(null)
     defi.points > 0 ? sfx.coin() : sfx.fail()
+    unlockAchievement('premier-defi')
   }
 
   const ranked = [...shlagos].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
@@ -85,6 +106,39 @@ export default function Defis() {
           ))}
         </div>
       </Card>
+
+      <button
+        onClick={() => setShowHisto((v) => !v)}
+        className="glass-card rounded-2xl px-4 py-3 flex items-center justify-between"
+      >
+        <span className="font-display font-bold text-white text-sm">📜 Historique</span>
+        <span className="text-white/70 text-xs font-display font-semibold">{showHisto ? '▲' : '▼'}</span>
+      </button>
+
+      <AnimatePresence>
+        {showHisto && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden flex flex-col gap-1.5"
+          >
+            {historique.length === 0 && (
+              <p className="text-white/50 text-xs text-center py-2">Rien pour l'instant.</p>
+            )}
+            {historique.map((h) => (
+              <div key={h.id} className="glass-card rounded-2xl px-3.5 py-2.5 flex items-center gap-2">
+                <span className="text-white text-xs flex-1 min-w-0">
+                  <b className="font-display">{h.shlagoName}</b> — {h.defiText}
+                </span>
+                <span className={`font-display font-bold text-xs shrink-0 ${h.points < 0 ? 'text-coral-300' : 'text-sun-300'}`}>
+                  {h.points > 0 ? '+' : ''}{h.points}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <p className="text-white/70 text-xs -mt-1 mb-1">Tape un défi pour dire qui l'a fait.</p>
 
@@ -111,41 +165,43 @@ export default function Defis() {
 
       <AnimatePresence>
         {pickerIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
-            onClick={() => setPickerIndex(null)}
-          >
+          <Portal>
             <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass-card rounded-3xl p-5 w-full max-w-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
+              onClick={() => setPickerIndex(null)}
             >
-              <p className="font-display font-bold text-white text-center mb-4">Qui a fait ça ?</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                {shlagos.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => assign(s.id)}
-                    className="rounded-2xl bg-white/10 py-3 flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
-                  >
-                    {s.photo ? (
-                      <img src={s.photo} alt={s.prenom} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-display font-bold text-white">
-                        {s.prenom.charAt(0)}
-                      </div>
-                    )}
-                    <span className="text-white text-xs font-display font-semibold">{s.prenom}</span>
-                  </button>
-                ))}
-              </div>
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="glass-card rounded-3xl p-5 w-full max-w-sm"
+              >
+                <p className="font-display font-bold text-white text-center mb-4">Qui a fait ça ?</p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {shlagos.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => assign(s.id)}
+                      className="rounded-2xl bg-white/10 py-3 flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+                    >
+                      {s.photo ? (
+                        <img src={s.photo} alt={s.prenom} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-display font-bold text-white">
+                          {s.prenom.charAt(0)}
+                        </div>
+                      )}
+                      <span className="text-white text-xs font-display font-semibold">{s.prenom}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </Portal>
         )}
       </AnimatePresence>
     </PageShell>

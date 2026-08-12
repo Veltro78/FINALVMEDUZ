@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageShell from '../../components/PageShell.jsx'
 import { citations } from '../../data/citations.js'
+import { unlockAchievement } from '../../utils/achievements.js'
 
 // Seules les citations attribuées à un vrai Shlago (pas "Message", pas vide)
 // sont jouables — on a besoin d'options claires pour le quiz.
@@ -23,11 +24,18 @@ export default function QuiADitCa() {
   const [round, setRound] = useState(buildRound)
   const [picked, setPicked] = useState(null)
   const [score, setScore] = useState({ good: 0, total: 0 })
+  const [streak, setStreak] = useState(0)
 
   function pick(name) {
     if (picked) return
     setPicked(name)
-    setScore((s) => ({ good: s.good + (name === round.q.auteur ? 1 : 0), total: s.total + 1 }))
+    const correct = name === round.q.auteur
+    setScore((s) => ({ good: s.good + (correct ? 1 : 0), total: s.total + 1 }))
+    setStreak((s) => {
+      const next = correct ? s + 1 : 0
+      if (next >= 5) unlockAchievement('quiz-parfait')
+      return next
+    })
   }
 
   function next() {

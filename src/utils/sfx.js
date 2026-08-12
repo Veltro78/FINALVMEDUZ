@@ -54,5 +54,44 @@ export const sfx = {
   hardstyle: () => {
     tone({ freq: 60, duration: 0.12, type: 'square', volume: 0.4 })
     tone({ freq: 55, duration: 0.1, type: 'square', volume: 0.35, delay: 0.12 })
+  },
+  // ---------- Boîte à prout ----------
+  proutCourt: () => tone({ freq: 110, freqEnd: 60, duration: 0.18, type: 'sawtooth', volume: 0.35 }),
+  proutLong: () => tone({ freq: 90, freqEnd: 40, duration: 0.7, type: 'sawtooth', volume: 0.3 }),
+  proutAigu: () => tone({ freq: 260, freqEnd: 90, duration: 0.3, type: 'square', volume: 0.28 }),
+  proutGrave: () => tone({ freq: 55, freqEnd: 30, duration: 0.5, type: 'sawtooth', volume: 0.4 }),
+  proutRafale: () => {
+    ;[0, 0.12, 0.22, 0.3].forEach((d) => tone({ freq: 100 + Math.random() * 40, freqEnd: 50, duration: 0.1, type: 'sawtooth', volume: 0.3, delay: d }))
+  },
+  proutSqueak: () => tone({ freq: 400, freqEnd: 700, duration: 0.15, type: 'square', volume: 0.2 })
+}
+
+// 👉 Easter egg "Mode Rave" — joue /sounds/anthem.mp3 si le fichier existe
+// (à toi de le déposer toi-même, voir README dans /public/sounds/), sinon
+// retombe sur une boucle de kicks synthétisés pour ne jamais rien casser.
+export function playAnthemOrFallback(durationMs = 10000) {
+  const audio = new Audio('/sounds/anthem.mp3')
+  let usedReal = false
+  let fallbackInterval = null
+
+  function startFallback() {
+    if (usedReal || fallbackInterval) return
+    fallbackInterval = setInterval(() => sfx.hardstyle(), 350)
+  }
+
+  audio.addEventListener('canplay', () => { usedReal = true })
+  audio.addEventListener('error', startFallback)
+  audio.play().then(() => { usedReal = true }).catch(startFallback)
+
+  const stopTimer = setTimeout(() => {
+    audio.pause()
+    if (fallbackInterval) clearInterval(fallbackInterval)
+  }, durationMs)
+
+  // fonction de nettoyage si on veut couper plus tôt
+  return () => {
+    clearTimeout(stopTimer)
+    audio.pause()
+    if (fallbackInterval) clearInterval(fallbackInterval)
   }
 }

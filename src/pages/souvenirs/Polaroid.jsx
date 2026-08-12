@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase.js'
 import PageShell from '../../components/PageShell.jsx'
+import { unlockAchievement } from '../../utils/achievements.js'
 
 const NAME_KEY = 'shlagos-polaroid-name'
 const MAX_WIDTH = 480 // photo compressée côté téléphone avant envoi — reste léger dans Firestore
@@ -65,6 +66,7 @@ export default function Polaroid() {
         author: name.trim() || 'Un Shlago',
         createdAt: serverTimestamp()
       })
+      unlockAchievement('premier-polaroid')
       setPreview(null)
       setPendingFile(null)
       setCaption('')
