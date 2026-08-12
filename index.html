@@ -17,6 +17,63 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Filet de sécurité ultime : si React n'a même pas réussi à démarrer
+         (bundle cassé, script qui ne charge pas, etc.), ceci s'affiche
+         tout seul après quelques secondes avec un bouton de réparation.
+         Volontairement écrit en JS pur, sans dépendre de React ni d'aucun
+         module — doit marcher même si tout le reste a planté. -->
+    <div
+      id="boot-fallback"
+      style="display:none; position:fixed; inset:0; z-index:999999; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:linear-gradient(180deg,#38c6e6 0%,#0a5f80 100%); color:#fff; font-family:system-ui,sans-serif;"
+    >
+      <span style="font-size:44px;">🦑</span>
+      <h1 style="font-size:20px; font-weight:800; margin:0;">Petit souci de chargement</h1>
+      <p style="font-size:14px; opacity:0.85; max-width:280px; margin:0;">
+        Appuie sur le bouton pour réparer l'appli automatiquement — ça prend deux secondes.
+      </p>
+      <button
+        id="boot-fallback-btn"
+        style="border:none; border-radius:999px; padding:14px 28px; font-size:15px; font-weight:700; color:#fff; background:linear-gradient(135deg,#ff6f7d,#7c3fd4); box-shadow:0 8px 20px -6px rgba(0,0,0,0.5);"
+      >
+        🔧 Réparer l'appli
+      </button>
+    </div>
+
+    <script>
+      (function () {
+        function hardRepair() {
+          var tasks = []
+          if (window.caches && caches.keys) {
+            tasks.push(
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k) }))
+              })
+            )
+          }
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            tasks.push(
+              navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all(regs.map(function (r) { return r.unregister() }))
+              })
+            )
+          }
+          Promise.all(tasks).catch(function () {}).then(function () {
+            window.location.reload()
+          })
+        }
+
+        document.getElementById('boot-fallback-btn').addEventListener('click', hardRepair)
+
+        setTimeout(function () {
+          var root = document.getElementById('root')
+          if (root && root.childElementCount === 0) {
+            document.getElementById('boot-fallback').style.display = 'flex'
+          }
+        }, 6000)
+      })()
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

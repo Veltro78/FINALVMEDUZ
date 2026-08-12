@@ -25,8 +25,36 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,wav,mp3,json}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024
+        // Précache seulement le noyau léger de l'appli (JS/CSS/HTML/icônes)
+        // — rapide et fiable à installer. Les gros médias (photos, sons,
+        // fonds) ne sont PAS précachés d'un bloc : ça fait courir le risque
+        // qu'une installation échoue à mi-chemin sur un réseau capricieux
+        // et laisse l'appli dans un état cassé. À la place, ils sont mis en
+        // cache automatiquement au fil de l'eau (dès qu'ils sont vus une
+        // fois) via les règles de cache runtime ci-dessous.
+        globPatterns: ['**/*.{js,css,html,svg,json}'],
+        globIgnores: ['**/photos-artistes/**', '**/photos-2025/**', '**/sounds/**'],
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:png|jpe?g|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'medusa-images',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 }
+            }
+          },
+          {
+            urlPattern: /\.(?:wav|mp3)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'medusa-sounds',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 90 }
+            }
+          }
+        ],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       }
     })
   ],
