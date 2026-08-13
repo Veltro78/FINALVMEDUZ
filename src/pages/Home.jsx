@@ -103,6 +103,34 @@ export default function Home() {
           Les Shlagos
         </BigButton>
       </div>
+
+      <Link to="/50-questions" className="block mt-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative flex items-center gap-3 rounded-3xl px-5 py-4 overflow-hidden border border-red-900/60"
+          style={{ background: 'linear-gradient(135deg, #1a0505, #000)' }}
+        >
+          <motion.div
+            className="absolute inset-0 -z-10"
+            animate={{ opacity: [0.15, 0.35, 0.15] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(200,0,0,0.5), transparent 70%)' }}
+          />
+          <span className="text-3xl shrink-0">💀</span>
+          <span className="flex-1">
+            <span className="block font-display font-extrabold text-red-400 text-base tracking-wide">
+              50 QUESTIONS
+            </span>
+            <span className="block font-body text-red-300/60 text-xs mt-0.5">
+              Le défi le plus dur du Medusa — entre si tu l'oses
+            </span>
+          </span>
+          <span className="text-xl text-red-500/70 shrink-0">›</span>
+        </motion.div>
+      </Link>
     </PageShell>
   )
 }

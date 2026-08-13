@@ -1,6 +1,5 @@
 import PageShell from '../../components/PageShell.jsx'
 import BigButton from '../../components/BigButton.jsx'
-import CompactLink from '../../components/CompactLink.jsx'
 
 export default function CommandementIndex() {
   return (
@@ -22,14 +21,12 @@ export default function CommandementIndex() {
       >
         Cashless
       </BigButton>
-
-      <p className="text-white/50 text-[11px] font-display font-semibold uppercase tracking-wide mt-4 mb-1">
-        Infos pratiques
-      </p>
-      <div className="flex flex-col gap-1">
-        <CompactLink to="/commandement/faq" emoji="❓">FAQ Medusa</CompactLink>
-        <CompactLink to="/commandement/risques" emoji="💊">Réduction des risques</CompactLink>
-      </div>
+      <BigButton to="/commandement/faq" icon="question">
+        FAQ Medusa
+      </BigButton>
+      <BigButton to="/commandement/risques" icon="firstaid">
+        Réduction des risques
+      </BigButton>
     </PageShell>
   )
 }

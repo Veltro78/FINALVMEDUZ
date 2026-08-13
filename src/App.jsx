@@ -9,6 +9,7 @@ import CommandementIndex from './pages/commandement/CommandementIndex.jsx'
 import PlanFestival from './pages/commandement/PlanFestival.jsx'
 import Meteo from './pages/commandement/Meteo.jsx'
 import OuEsTu from './pages/OuEsTu.jsx'
+import CinquanteQuestions from './pages/CinquanteQuestions.jsx'
 import Faq from './pages/commandement/Faq.jsx'
 import ReductionRisques from './pages/commandement/ReductionRisques.jsx'
 import TraducteurEspagnol from './pages/commandement/TraducteurEspagnol.jsx'
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/commandement/plan" element={<PlanFestival />} />
           <Route path="/commandement/meteo" element={<Meteo />} />
           <Route path="/ou-es-tu" element={<OuEsTu />} />
+          <Route path="/50-questions" element={<CinquanteQuestions />} />
           <Route path="/commandement/faq" element={<Faq />} />
           <Route path="/commandement/risques" element={<ReductionRisques />} />
           <Route path="/commandement/espagnol" element={<TraducteurEspagnol />} />
